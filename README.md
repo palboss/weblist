@@ -40,5 +40,5 @@
 
 💡 **提示**：可以在 HTML 中扩展导航列表，或增加更多样式，打造个性化导航页面。
 
-![image](https://github.com/user-attachments/assets/2ca6aa5f-69c3-4cbf-be8e-8e96335e90d5)
+![image](https://github.com/user-attachments/assets/278742ab-6a22-44bf-8a61-a7d027b4936b)
 
