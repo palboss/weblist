@@ -15,17 +15,30 @@
 
 ---
 
-## 🚀 **使用说明**
+### 🚀 **使用说明**
 
 1. **设置环境变量**
    - 在 Cloudflare Workers 设置 `PASSWORD` 环境变量，用于访问验证。
 
-2. **部署到 Cloudflare Workers**
-   - 将代码部署到 Cloudflare Workers。
-   - 配置环境变量。
+2. **创建 KV Namespace**
+   - 在 Cloudflare Workers 中创建一个 KV Namespace，命名为 `"weblist"`。
 
-3. **访问域名**
-   - 访问 Workers 分配的域名，即可使用密码保护的网址导航页面。
+3. **添加 KV 数据**
+   - 在 KV Namespace `"weblist"` 中添加数据：
+     - **Key**: `"DASHBOARD"`
+     - **Value**: `dashboard` HTML 内容。
+
+4. **绑定 KV Namespace**
+   - 在 Worker 设置中绑定 KV Namespace：
+     - **绑定名称**：`"WEBLIST"`
+     - **对应 KV Namespace**：`"weblist"`。
+
+5. **部署到 Cloudflare Workers**
+   - 将代码部署到 Cloudflare Workers。
+   - 确保已正确绑定 KV Namespace 并配置环境变量。
+
+6. **访问域名**
+   - 访问 Cloudflare Workers 分配的域名，即可使用密码保护的网址导航页面。
 
 ---
 
