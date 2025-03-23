@@ -1,37 +1,57 @@
 
+// Event listener
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request))
 })
 
+// Request handler
 async function handleRequest(request) {
   const url = new URL(request.url)
   
-  if (url.pathname === '/login' && request.method === 'POST') {
-    const formData = await request.formData()
-    const password = formData.get('password')
+  try {
+    // 获取KV中的dashboard内容
+    const dashboardHtml = await WEBLIST.get('DASHBOARD')
     
-    if (password === PASSWORD) {
-      const response = new Response(JSON.stringify({ success: true }), {
+    if (url.pathname === '/login' && request.method === 'POST') {
+      const formData = await request.formData()
+      const password = formData.get('password')
+      
+      if (password === PASSWORD) {
+        const response = new Response(JSON.stringify({ success: true }), {
+          headers: { 'Content-Type': 'application/json' }
+        })
+        response.headers.set('Set-Cookie', `auth=${PASSWORD}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=86400`)
+        return response
+      } else {
+        return new Response(JSON.stringify({ success: false }), {
+          headers: { 'Content-Type': 'application/json' }
+        })
+      }
+    } else if (url.pathname === '/check-auth' && request.method === 'GET') {
+      return new Response(JSON.stringify({ authenticated: isAuthenticated(request) }), {
         headers: { 'Content-Type': 'application/json' }
       })
-      response.headers.set('Set-Cookie', `auth=${PASSWORD}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=86400`)
-      return response
     } else {
-      return new Response(JSON.stringify({ success: false }), {
-        headers: { 'Content-Type': 'application/json' }
+      if (!isAuthenticated(request)) {
+        return new Response(getLoginHtml(), {
+          headers: { 'Content-Type': 'text/html' },
+        })
+      }
+      
+      if (!dashboardHtml) {
+        return new Response('Dashboard content not found', { status: 500 })
+      }
+      
+      return new Response(getHtmlContent(dashboardHtml), {
+        headers: { 'Content-Type': 'text/html' },
       })
     }
-  } else if (url.pathname === '/check-auth' && request.method === 'GET') {
-    return new Response(JSON.stringify({ authenticated: isAuthenticated(request) }), {
-      headers: { 'Content-Type': 'application/json' }
-    })
-  } else {
-    return new Response(getHtmlContent(), {
-      headers: { 'Content-Type': 'text/html' },
-    })
+  } catch (error) {
+    return new Response('Internal Server Error', { status: 500 })
   }
 }
 
+// Authentication check
 function isAuthenticated(request) {
   const cookies = request.headers.get('Cookie')
   if (cookies) {
@@ -44,16 +64,151 @@ function isAuthenticated(request) {
   return false
 }
 
-function getHtmlContent() {
+// Login page HTML
+function getLoginHtml() {
   return `
   
 <!DOCTYPE html>
 <html data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <title>WebList</title>
+    <title>AITO WebList Login</title>
     <style>
-        /* 主题变量 */
+        /* Theme variables */
+        [data-theme="light"] {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --card-bg: #ffffff;
+            --card-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            --button-bg: #f0f0f0;
+            --button-text: #333333;
+            --border-color: #eeeeee;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #ffffff;
+            --card-bg: #242424;
+            --card-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            --button-bg: #333333;
+            --button-text: #ffffff;
+            --border-color: #333333;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #loginForm {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: var(--card-shadow);
+            width: 300px;
+            text-align: center;
+        }
+
+        #loginForm h1 {
+            margin: 0 0 20px 0;
+            color: var(--text-color);
+            font-size: 24px;
+        }
+
+        #loginForm input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        #loginForm button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 20px;
+            background: var(--button-bg);
+            color: var(--button-text);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        #loginForm button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div id="loginForm">
+        <h1>AITO WebList</h1>
+        <input type="password" id="password" placeholder="Enter password">
+        <button onclick="login()">Login</button>
+    </div>
+
+    <script>
+        async function login() {
+            const password = document.getElementById('password').value;
+            const formData = new FormData();
+            formData.append('password', password);
+            
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    window.location.reload();
+                } else {
+                    alert('Incorrect password');
+                }
+            } catch (error) {
+                alert('Login failed. Please try again.');
+            }
+        }
+
+        // Add Enter key listener
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+    </script>
+</body>
+</html>
+
+  `
+}
+
+
+// Main page HTML generator
+function getHtmlContent(dashboardHtml) {
+  return `
+  
+<!DOCTYPE html>
+<html data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <title>AITO WebList</title>
+    <style>
+        /* Theme variables */
         [data-theme="light"] {
             --bg-color: #ffffff;
             --text-color: #333333;
@@ -78,7 +233,7 @@ function getHtmlContent() {
             --card-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
 
-        /* 基础样式 */
+        /* Base styles */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
@@ -89,58 +244,7 @@ function getHtmlContent() {
             line-height: 1.6;
         }
 
-		/* 登录表单样式 */
-		#loginForm {
-			position: fixed; /* 固定定位 */
-			left: 50%;
-			top: 50%;
-			transform: translate(-50%, -50%); /* 使用transform居中 */
-			text-align: center;
-			background-color: var(--card-bg);
-			padding: 30px;
-			border-radius: 10px;
-			box-shadow: var(--card-shadow);
-			width: 300px;
-			z-index: 1000;
-		}
-
-		#loginForm input {
-			width: 100%;
-			padding: 12px;
-			margin: 10px 0;
-			border: 1px solid var(--border-color);
-			border-radius: 4px;
-			background: var(--bg-color);
-			color: var(--text-color);
-			font-size: 16px;
-		}
-
-		#loginForm button {
-			width: 100%;
-			padding: 12px;
-			margin-top: 20px;
-			background: var(--button-bg);
-			color: var(--button-text);
-			border: none;
-			border-radius: 4px;
-			cursor: pointer;
-			font-size: 16px;
-			transition: all 0.3s ease;
-		}
-
-		#loginForm button:hover {
-			opacity: 0.9;
-			transform: translateY(-2px);
-		}
-
-		/* 添加标题样式 */
-		#loginForm h1 {
-			margin: 0 0 20px 0;
-			color: var(--text-color);
-			font-size: 24px;
-		}
-
-        /* 主题切换按钮 */
+        /* Theme switch button */
         .mode-switch-wrapper {
             text-align: right;
             padding: 10px 20px;
@@ -161,7 +265,7 @@ function getHtmlContent() {
             transition: all 0.3s ease;
         }
 
-        /* 项目卡片样式 */
+        /* Project card styles */
         .project {
             background-color: var(--card-bg);
             border-radius: 10px;
@@ -183,7 +287,7 @@ function getHtmlContent() {
             gap: 15px;
         }
 
-        /* 链接样式 */
+        /* Link styles */
         a {
             color: var(--link-color);
             text-decoration: none;
@@ -198,7 +302,7 @@ function getHtmlContent() {
             transform: translateY(-2px);
         }
 
-        /* 子项目样式 */
+        /* Subproject styles */
         .subproject {
             margin: 20px 0;
         }
@@ -208,7 +312,7 @@ function getHtmlContent() {
             margin: 10px 0;
         }
 
-        /* 响应式设计 */
+        /* Responsive design */
         @media (max-width: 768px) {
             body {
                 padding: 10px;
@@ -221,61 +325,9 @@ function getHtmlContent() {
     </style>
 </head>
 <body>
-	<div id="loginForm">
-		<h1>WebList</h1>
-		<input type="password" id="password" placeholder="Enter password">
-		<button onclick="login()">Login</button>
-	</div>
-
-    <div id="dashboard" style="display:none;">
-        <div class="mode-switch-wrapper">
-            <button onclick="toggleTheme()" id="modeToggle">🌓 切换模式</button>
-        </div>
-
-        <div class="project">
-            <h2>主站</h2>
-            <div class="links">
-                <a href="https://m5.aitoo.fun/" target="_blank">AI明语 AITO</a>
-            </div>
-        </div>
-
-        <div class="project">
-            <h2>子站</h2>
-            <div class="subproject">
-                <h3>开发</h3>
-                <div class="subproject">
-                    <h3>论坛</h3>
-                    <div class="links">
-                        <a href="https://linux.do/" target="_blank">Linux.do</a>
-                    </div>
-                </div>
-
-                <div class="subproject">
-                    <h3>Git</h3>
-                    <div class="links">
-                        <a href="https://github.com/" target="_blank">Github</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="subproject">
-            <h3>工具</h3>
-            <div class="links">
-                <a href="https://www.jyshare.com/" target="_blank">jyshare</a>
-            </div>
-        </div>
-
-        <div class="subproject">
-            <h3>电影</h3>
-            <div class="links">
-                <a href="https://47bt.com/" target="_blank">47bt</a>
-            </div>
-        </div>
-    </div>
-
+    ${dashboardHtml}
     <script>
-        // 主题切换功能
+        // Theme toggle functionality
         function toggleTheme() {
             const html = document.documentElement;
             const currentTheme = html.getAttribute('data-theme');
@@ -284,52 +336,12 @@ function getHtmlContent() {
             localStorage.setItem('theme', newTheme);
         }
 
-        // 认证相关功能
-        let password = '';
-
-        function showLoginForm() {
-            document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('dashboard').style.display = 'none';
-        }
-
-        function showDashboard() {
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
-        }
-
-        async function checkAuth() {
-            const response = await fetch('/check-auth');
-            const data = await response.json();
-            if (data.authenticated) {
-                showDashboard();
-            } else {
-                showLoginForm();
-            }
-        }
-
-        async function login() {
-            password = document.getElementById('password').value;
-            const formData = new FormData();
-            formData.append('password', password);
-            const response = await fetch('/login', {
-                method: 'POST',
-                body: formData
-            });
-            const result = await response.json();
-            if (result.success) {
-                showDashboard();
-            } else {
-                alert('Incorrect password');
-            }
-        }
-
-        // 页面加载时的初始化
+        // Page load initialization
         window.onload = function() {
             const savedTheme = localStorage.getItem('theme');
             if (savedTheme) {
                 document.documentElement.setAttribute('data-theme', savedTheme);
             }
-            checkAuth();
         }
     </script>
 </body>
