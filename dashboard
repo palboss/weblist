@@ -1,0 +1,44 @@
+<div class="mode-switch-wrapper">
+	<button onclick="toggleTheme()" id="modeToggle">🌓 切换模式</button>
+</div>
+
+<div class="project">
+	<h2>主站</h2>
+	<div class="links">
+		<a href="https://m5.aitoo.fun/" target="_blank">AI明语 AITO</a>
+	</div>
+</div>
+
+<div class="project">
+	<h2>子站</h2>
+	<div class="subproject">
+		<h3>开发</h3>
+		<div class="subproject">
+			<h3>论坛</h3>
+			<div class="links">
+				<a href="https://linux.do/" target="_blank">Linux.do</a>
+			</div>
+		</div>
+
+		<div class="subproject">
+			<h3>Git</h3>
+			<div class="links">
+				<a href="https://github.com/" target="_blank">Github</a>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="subproject">
+	<h3>工具</h3>
+	<div class="links">
+		<a href="https://www.jyshare.com/" target="_blank">jyshare</a>
+	</div>
+</div>
+
+<div class="subproject">
+	<h3>电影</h3>
+	<div class="links">
+		<a href="https://47bt.com/" target="_blank">47bt</a>
+	</div>
+</div>
