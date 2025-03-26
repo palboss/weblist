@@ -54,7 +54,7 @@
 💡 **提示**：可以在 HTML 中扩展导航列表，或增加更多样式，打造个性化导航页面。  
 
 ### **Demo**
-33![image](https://github.com/user-attachments/assets/278742ab-6a22-44bf-8a61-a7d027b4936b)
+![image](https://github.com/user-attachments/assets/278742ab-6a22-44bf-8a61-a7d027b4936b)
 
 ### **增加KV**
 ![image](https://github.com/user-attachments/assets/822de3bc-ca11-41ab-83da-cd814761accc)
